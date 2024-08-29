@@ -13,3 +13,28 @@ td, th {
 th {
   text-align: center;
 }
+
+
+.highlight {
+  background-color: yellow;
+}
+
+.highlight[data-tooltip]:hover::after {
+content: attr(data-tooltip);
+  background-color: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.identical {
+  background-color: lightblue;
+}
+
+.not-captured {
+  background-color: lightgray;
+}

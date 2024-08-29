@@ -1,22 +1,18 @@
 import { Component } from '@angular/core';
 import { Subject, catchError, of, takeUntil } from 'rxjs';
-import { CompanyData, Income } from 'src/app/_models/income';
+import { CompanyData, Income, MonthlyData } from 'src/app/_models/income';
 import { DataService } from 'src/app/_services/data.service';
 import * as moment from 'moment';
-import { MatTableDataSource } from '@angular/material/table';
 
 @Component({
   selector: 'app-income-profit-table',
   templateUrl: './income-profit-table.component.html',
-  styleUrls: ['./income-profit-table.component.scss']
+  styleUrls: ['./income-profit-table.component.scss'],
 })
 export class IncomeProfitTableComponent {
   public ngUnsubcribe = new Subject();
-  incomeList: Income[] = [];
+  companies: CompanyData[] = [];
   months: string[] = [];
-  companyData: any;
-  income?: number = 0;
-  profit?: number = 0;
 
   constructor(
     private dataService: DataService,
@@ -26,10 +22,11 @@ export class IncomeProfitTableComponent {
 
   ngOnInit() {
     this.getData();
-    this.generateLast12Months();
+    this.generateLastMonths();
   }
 
-  generateLast12Months() {
+  // make last 12 months
+  generateLastMonths() {
     const currentMonth = moment();
     for (let i = 1; i <= 12; i++) {
       this.months.unshift(currentMonth.clone().subtract(i, 'months').format('MMMM'));
@@ -37,14 +34,7 @@ export class IncomeProfitTableComponent {
     this.months.sort((a, b) => moment(a, 'MMMM').diff(moment(b, 'MMMM')));
   }
 
-  makeIncome() {
-
-  }
-
-  makeProfit() {
-
-  }
-
+  // get all data
   getData() {
     this.dataService.getAllData().pipe(
       takeUntil(this.ngUnsubcribe),
@@ -52,31 +42,85 @@ export class IncomeProfitTableComponent {
         return of(err);
       })
     ).subscribe(res => {
-      let dataFilter = this.removeDuplicatesById(res);
-      console.log('aa', dataFilter);
-      
-      dataFilter.forEach((item: Income) => {
-        let company = {
-          name: item.CompanyName,
-          // data: [
-          //   this.months: { income: this.income, profit: this.profit },
-          // ]
-          data: {
-            'January 2024': { income: 100000, profit: 20000 },
-            'February 2024': { income: 120000, profit: 22000 },
-          }
-        };
-        this.companyData.push(company);
-      });
+      let dataFilter = this.removeDuplicates(res);
+      this.companies = this.mapDataToCompanies(dataFilter);
     })
   }
 
-  removeDuplicatesById(array: any[]): any[] {
+  //map data to new format
+  mapDataToCompanies(data: any[]): CompanyData[] {
+    const companiesMap: { [key: string]: MonthlyData[] } = {};
+
+    data.forEach(item => {
+      let month;
+      this.months.forEach(res => {
+        month = res;
+      });
+      const year = item.YearID;
+      const totalIncome = item.TotalIncome;
+      const totalExpenses = item.TotalExpenses;
+      const costOfSales = item.CostofSales;
+
+      const monthlyData: MonthlyData = {
+        month,
+        year,
+        totalIncome,
+        totalExpenses,
+        costOfSales
+      };
+
+      if (!companiesMap[item.CompanyName]) {
+        companiesMap[item.CompanyName] = [];
+      }
+      companiesMap[item.CompanyName].push(monthlyData);
+    });
+
+    return Object.keys(companiesMap).map(companyName => ({
+      name: companyName,
+      monthlyData: companiesMap[companyName]
+    }));
+  }
+
+  //make % change
+  calculatePercentChanges() {
+    this.companies.forEach(company => {
+      company?.monthlyData.forEach((data: any, index: number, arr: any) => {
+        if (index > 0) {
+          const prev = arr[index - 1];
+          if (prev.totalIncome && data.totalIncome) {
+            const incomeChange = ((data.totalIncome - prev.totalIncome) / prev.totalIncome) * 100;
+            data.percentChangeIncome = incomeChange.toFixed(2) + '%';
+
+            if (incomeChange > 300) {
+              data.percentChangeIncome += ' (Revenue Surge)';
+            }
+          }
+          if (prev.totalExpenses && data.totalExpenses) {
+            const profitChange = ((data.totalIncome - data.totalExpenses) - (prev.totalIncome - prev.totalExpenses)) / (prev.totalIncome - prev.totalExpenses) * 100;
+            data.percentChangeProfit = profitChange.toFixed(2) + '%';
+
+            if (profitChange < -100) {
+              data.percentChangeProfit += ' (Extreme Profit Drop)';
+            }
+          }
+          if (data.totalIncome === prev.totalIncome && data.totalExpenses === prev.totalExpenses) {
+            data.percentChangeIncome = 'Identical Income and Expenses';
+          }
+        }
+
+        if (data.totalIncome === 0 || data.totalIncome === null) {
+          data.percentChangeIncome = 'Data not Captured';
+        }
+      });
+    });
+  }
+
+  //remove duplicate data
+  removeDuplicates(array: any[]): any[] {
     const uniqueArray = array.reduce((accumulator, current) => {
       if (!accumulator.some((item: Income) => (item.CompanyName === current.CompanyName) 
         && (item.MonthID === current.MonthID) 
-        && (item.YearID === current.YearID) 
-        && (item.TotalIncome === current.TotalIncome || item.TotalExpenses === current.TotalExpenses ))
+        && (item.YearID === current.YearID))
       ) {
         accumulator.push(current);
       }
@@ -84,21 +128,5 @@ export class IncomeProfitTableComponent {
     }, []);
 
     return uniqueArray;
-  }
-
-  onIncomeTooltip(element: any): string {
-    if (element.income === 0 || element.income === null) {
-      return 'Data not Captured';
-    } else if (element.incomeSurge) {
-      return 'Revenue Surge';
-    }
-    return '';
-  }
-
-  onProfitTooltip(element: any): string {
-    if (element.profitDrop) {
-      return 'Extreme Profit Drop';
-    }
-    return '';
   }
 }

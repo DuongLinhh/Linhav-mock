@@ -2,16 +2,24 @@ export class Income {
     CompanyName?: string;
     MonthID?: number;
     YearID?: number;
-    TotalIncome?: number | string;
-    TotalExpenses?: number | string;
-    CostofSales?: number | string;
+    TotalIncome?: any;
+    TotalExpenses?: any;
+    CostofSales?: string;
     IgnoreException?: number;
+    income?: number;
+    profit?: number;
 }
 
 export class CompanyData {
   name?: string;
-  data?: {
-    income?: number | string;
-    profit?: number | string;
-  }
+  monthlyData?: any;
+}
+
+
+export class MonthlyData {
+  month?: string;
+  totalIncome?: any;
+  totalExpenses?: any;
+  year?: number;
+  costOfSales?: number;
 }

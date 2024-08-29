@@ -1,10 +1,9 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgFor } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { IncomeProfitTableComponent } from './income-profit-table/income-profit-table.component';
 import { SharedModule } from '../shared/shared.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {HttpClientModule} from '@angular/common/http';
 import { DataService } from '../_services/data.service';
 import { CoreModule } from '../_helper/core.module';
@@ -26,7 +25,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     CommonModule,
     SharedModule,
     CoreModule,
-    BrowserAnimationsModule,
     HttpClientModule,
     FormsModule,
     ReactiveFormsModule,
@@ -37,7 +35,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatToolbarModule,
     MatPaginatorModule,
     MatTooltipModule,
-    MatTableModule
+    MatTableModule,
+    NgFor
   ],
   providers: [
     DataService

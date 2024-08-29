@@ -1,32 +1,46 @@
 <h1 align="center">The income of Company</h1>
 
-<table mat-table>
-	<!-- Table Header -->
+<table>
 	<thead>
 	  <tr>
 		<th>Company Name</th>
 		<th colspan="2" *ngFor="let month of months">{{ month }}</th>
 	  </tr>
-	  <tr >
-		<th></th>
-		<th>Income</th>
-		<th>Profit</th>
+	  <tr>
+		<ng-container *ngFor="let month of months; let i = index">
+			<th *ngIf="i === 0"></th>
+			<th>Income</th>
+			<th>Profit</th>
+		</ng-container>
 	  </tr>
 	</thead>
   
-	<!-- Table Body -->
 	<tbody>
-	  <tr *ngFor="let item of companyData">
-		<td>{{ item.name }}</td>
-		<td *ngFor="let month of months">
-		  <div *ngIf="item.data[month]">
-			Income: {{ item.data[month].income }} <br>
-			Profit: {{ item.data[month].profit }}
-		  </div>
-		  <div *ngIf="!item.data[month]">
-			No Data
-		  </div>
-		</td>
+	  <tr *ngFor="let item of companies; let i = index">
+		<td *ngIf="i !== 0">{{ item.name }}</td>
+		<ng-container *ngFor="let month of months; let i = index">
+			<td *ngFor="let data of item.monthlyData" [ngClass]="{
+				'highlight': data.percentChangeIncome?.includes('Surge') || data.percentChangeProfit?.includes('Drop'),
+				'identical': data.percentChangeIncome === 'Identical Income and Expenses',
+				'not-captured': data.percentChangeIncome === 'Data not Captured'
+			}">
+				<div>
+					{{ data.totalIncome ?? 'N/A' }}
+					<span *ngIf="data.percentChangeIncome">({{ data.percentChangeIncome }})</span>
+				</div>
+			</td>
+			<td *ngFor="let data of item.monthlyData" [ngClass]="{
+				'highlight': data.percentChangeIncome?.includes('Surge') || data.percentChangeProfit?.includes('Drop'),
+				'identical': data.percentChangeIncome === 'Identical Income and Expenses',
+				'not-captured': data.percentChangeIncome === 'Data not Captured'
+			}">
+				<div>
+					{{ data.totalIncome - data.totalExpenses ?? 'N/A' }}
+					<span *ngIf="data.percentChangeProfit">({{ data.percentChangeProfit }})</span>
+				</div>
+			</td>
+		</ng-container>
 	  </tr>
+
 	</tbody>
 </table>
